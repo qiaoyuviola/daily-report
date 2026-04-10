@@ -1,1 +1,180 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>投资报告</title></head><body>This is the dashboard index file from the extracted zip</body></html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>每日收盘报告</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --profit-green: #00C853;
+      --loss-red: #FF1744;
+    }
+    body {
+      background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+      min-height: 100vh;
+    }
+    .card {
+      background: rgba(31, 31, 46, 0.8);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .profit { color: var(--profit-green); }
+    .loss { color: var(--loss-red); }
+  </style>
+</head>
+<body class="text-white p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- 头部 -->
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">📊 每日收盘报告</h1>
+      <div class="text-gray-400 text-sm" id="lastUpdate"></div>
+    </div>
+
+    <!-- 目标进度 -->
+    <div class="card mb-6">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-lg font-semibold">📊 本月目标进度</h2>
+        <span class="text-xl font-bold loss" id="targetProgress">-1,243.30 / 5,000 (-24.9%)</span>
+      </div>
+      <div class="h-4 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full bg-gradient-to-r from-red-600 to-red-400 transition-all duration-500" style="width: 24.9%"></div>
+      </div>
+    </div>
+
+    <!-- 指标卡片 -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6" id="metrics"></div>
+
+    <!-- 持仓状态 -->
+    <div class="card mb-6">
+      <h2 class="text-lg font-semibold mb-4">📈 持仓状态</h2>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-gray-400 border-b border-gray-700">
+              <th class="py-2 px-2 text-left">股票</th>
+              <th class="py-2 px-2 text-right">数量</th>
+              <th class="py-2 px-2 text-right">成本</th>
+              <th class="py-2 px-2 text-right">现价</th>
+              <th class="py-2 px-2 text-right">盈亏</th>
+              <th class="py-2 px-2 text-right">盈亏%</th>
+              <th class="py-2 px-2 text-center">状态</th>
+            </tr>
+          </thead>
+          <tbody id="positionsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 大盘环境 -->
+    <div class="card mb-6">
+      <h2 class="text-lg font-semibold mb-4">🌍 大盘环境</h2>
+      <div class="grid grid-cols-3 gap-4" id="indices"></div>
+      <div class="mt-4 flex gap-4">
+        <div>
+          <div class="text-gray-400 text-sm mb-2">🔥 热门板块</div>
+          <div class="flex flex-wrap gap-2" id="hotSectors"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 持仓数据
+    const positions = [
+      { code: '601857', name: '中油资本', quantity: 1200, cost: 10.16, current: 9.85, sector: '多元金融' },
+      { code: '000066', name: '中国长城', quantity: 800, cost: 15.117, current: 14.52, sector: '计算机' },
+      { code: '000601', name: '韶能股份', quantity: 1400, cost: 6.439, current: 6.12, sector: '电力' },
+      { code: '002202', name: '金风科技', quantity: 300, cost: 24.448, current: 23.15, sector: '风电' },
+      { code: '002342', name: '巨力索具', quantity: 700, cost: 15.798, current: 14.89, sector: '机械' },
+    ];
+
+    // 计算数据
+    const totalCost = positions.reduce((sum, p) => sum + p.cost * p.quantity, 0);
+    const totalValue = positions.reduce((sum, p) => sum + p.current * p.quantity, 0);
+    const totalProfit = totalValue - totalCost;
+    const profitPercent = (totalProfit / totalCost * 100);
+
+    // 渲染指标卡片
+    document.getElementById('metrics').innerHTML = `
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">总资产</div>
+        <div class="text-2xl font-bold">¥${totalValue.toLocaleString()}</div>
+        <div class="text-sm ${totalProfit >= 0 ? 'profit' : 'loss'}">${totalProfit >= 0 ? '↑' : '↓'} ${Math.abs(totalProfit).toFixed(2)}</div>
+      </div>
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">累计盈利</div>
+        <div class="text-2xl font-bold loss">¥${totalProfit.toFixed(2)}</div>
+      </div>
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">持仓金额</div>
+        <div class="text-2xl font-bold">¥${totalValue.toLocaleString()}</div>
+      </div>
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">持仓数量</div>
+        <div class="text-2xl font-bold">${positions.length}</div>
+      </div>
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">成本总额</div>
+        <div class="text-2xl font-bold">¥${totalCost.toLocaleString()}</div>
+      </div>
+      <div class="card">
+        <div class="text-gray-400 text-sm mb-1">盈亏比例</div>
+        <div class="text-2xl font-bold ${profitPercent >= 0 ? 'profit' : 'loss'}">${profitPercent.toFixed(2)}%</div>
+      </div>
+    `;
+
+    // 渲染持仓表格
+    document.getElementById('positionsTable').innerHTML = positions.map(p => {
+      const profit = (p.current - p.cost) * p.quantity;
+      const profitPct = (p.current - p.cost) / p.cost * 100;
+      const isProfit = profit >= 0;
+      return `
+        <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+          <td class="py-3 px-2">
+            <div class="font-medium">${p.name}</div>
+            <div class="text-xs text-gray-400">${p.code}</div>
+          </td>
+          <td class="py-3 px-2 text-right">${p.quantity}</td>
+          <td class="py-3 px-2 text-right">${p.cost.toFixed(2)}</td>
+          <td class="py-3 px-2 text-right">${p.current.toFixed(2)}</td>
+          <td class="py-3 px-2 text-right ${isProfit ? 'profit' : 'loss'}">${isProfit ? '+' : ''}${profit.toFixed(2)}</td>
+          <td class="py-3 px-2 text-right ${isProfit ? 'profit' : 'loss'}">${isProfit ? '+' : ''}${profitPct.toFixed(2)}%</td>
+          <td class="py-3 px-2 text-center">
+            <span class="px-2 py-1 rounded text-xs ${profitPct >= 0 ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+              ${profitPct >= 0 ? '盈利' : '亏损'}
+            </span>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    // 渲染大盘
+    document.getElementById('indices').innerHTML = `
+      <div class="text-center p-3 bg-gray-700/30 rounded-lg">
+        <div class="text-gray-400 text-sm">上证指数</div>
+        <div class="text-lg font-semibold">3245.67</div>
+        <div class="text-sm loss">-12.34 (-0.38%)</div>
+      </div>
+      <div class="text-center p-3 bg-gray-700/30 rounded-lg">
+        <div class="text-gray-400 text-sm">深证成指</div>
+        <div class="text-lg font-semibold">10856.89</div>
+        <div class="text-sm loss">-45.67 (-0.42%)</div>
+      </div>
+      <div class="text-center p-3 bg-gray-700/30 rounded-lg">
+        <div class="text-gray-400 text-sm">创业板指</div>
+        <div class="text-lg font-semibold">2156.78</div>
+        <div class="text-sm loss">-23.45 (-1.08%)</div>
+      </div>
+    `;
+
+    document.getElementById('hotSectors').innerHTML = ['AI应用', '机器人', '低空经济'].map(s => 
+      `<span class="px-2 py-1 bg-purple-500/20 text-purple-400 rounded text-xs">${s}</span>`
+    ).join('');
+
+    document.getElementById('lastUpdate').textContent = '最后更新: ' + new Date().toLocaleString('zh-CN');
+  </script>
+</body>
+</html>
